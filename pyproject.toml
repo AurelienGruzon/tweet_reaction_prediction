@@ -1,0 +1,22 @@
+[project]
+name = "tweet-reaction-prediction"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Aurélien Gruzon",email = "aureliengruzon@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "scikit-learn (<1.5)",
+    "numpy (<2.1)",
+    "pandas (<2.3)",
+    "matplotlib (<3.9)",
+    "seaborn (<0.14)",
+    "mlflow (>=3.8.1,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

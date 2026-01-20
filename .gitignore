@@ -205,3 +205,25 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Environnements
+.venv/
+__pycache__/
+*.pyc
+
+# Données
+data/
+!data/.gitkeep
+
+# MLflow
+mlruns/
+artifacts/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+.Zone.Identifier
+
