@@ -1,0 +1,23 @@
+artifact_path: /home/aurelien/formation_openclassrooms/projet_7/tweet_reaction_prediction/mlruns/1/models/m-ca16666bdbcf495c8f669a04c6f10d33/artifacts
+flavors:
+  python_function:
+    config:
+      device: null
+    data: data
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.pytorch
+    pickle_module_name: mlflow.pytorch.pickle_module
+    python_version: 3.10.14
+  pytorch:
+    code: null
+    model_data: data
+    pytorch_version: 2.9.1+cu128
+mlflow_version: 3.8.1
+model_id: m-ca16666bdbcf495c8f669a04c6f10d33
+model_size_bytes: 267875883
+model_uuid: m-ca16666bdbcf495c8f669a04c6f10d33
+prompts: null
+run_id: 9e035c3264b9433f9058f9f4b6bb51cd
+utc_time_created: '2026-01-23 09:05:14.753982'
