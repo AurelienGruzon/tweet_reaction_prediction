@@ -8,14 +8,24 @@ from transformers import AutoTokenizer
 MODEL_DIR = Path(os.getenv("MODEL_DIR", "models/best"))
 TOKENIZER_DIR = Path(os.getenv("TOKENIZER_DIR", "models/best_tokenizer"))
 
+# Pour prod Azure (CPU), on force CPU au chargement.
 _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 _model = None
 _tokenizer = None
 
+
 def load_assets():
     global _model, _tokenizer
+
     if _model is None:
-        _model = mlflow.pytorch.load_model(str(MODEL_DIR)).to(_device)
+        # IMPORTANT: charge en mappant sur CPU pour éviter le crash "deserialize CUDA"
+        _model = mlflow.pytorch.load_model(
+            str(MODEL_DIR),
+            map_location=torch.device("cpu"),
+        )
+        # Optionnel: si tu veux autoriser l'exécution GPU quand dispo dans le conteneur
+        _model = _model.to(_device)
         _model.eval()
 
     if _tokenizer is None:
@@ -24,6 +34,7 @@ def load_assets():
         _tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_DIR, use_fast=True)
 
     return _model, _tokenizer
+
 
 @torch.no_grad()
 def predict_proba_negative(text: str, max_len: int = 96) -> float:
@@ -37,5 +48,5 @@ def predict_proba_negative(text: str, max_len: int = 96) -> float:
     )
     enc = {k: v.to(_device) for k, v in enc.items()}
     out = model(**enc)
-    p = softmax(out.logits, dim=1)[0, 1].item()  # proba classe 1 = "negative"
+    p = softmax(out.logits, dim=1)[0, 1].item()
     return float(p)

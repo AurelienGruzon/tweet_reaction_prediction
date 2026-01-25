@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+mlruns/
+mlflow_archives/
+mlflow.db
+artifacts/
+notebooks/
+tests/
+.git/
+.gitignore
+README.md
+

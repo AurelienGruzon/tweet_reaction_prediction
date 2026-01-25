@@ -227,3 +227,13 @@ artifacts/
 Thumbs.db
 .Zone.Identifier
 
+data/external/
+
+# MLflow
+mlflow.db
+
+# Archives
+mlflow_archives/
+
+# Pyenv
+.python-version
