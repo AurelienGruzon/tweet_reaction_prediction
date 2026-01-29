@@ -2,7 +2,9 @@ fastapi
 uvicorn[standard]
 pydantic
 mlflow
-transformers
+transformers==4.57.6
 tokenizers
 numpy
+azure-monitor-opentelemetry
+opentelemetry-api
 
