@@ -11,6 +11,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Sanity check model present
+        run: |
+          ls -la models/best
+          ls -la models/best/data
+          test -f models/best/data/model.pth
 
       - name: Set image tag (short sha)
         id: vars
