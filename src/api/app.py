@@ -1,5 +1,8 @@
 import asyncio
+import logging
+import os
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from src.api.model_loader import predict_proba_negative, load_assets
@@ -7,36 +10,24 @@ from src.api.schemas import PredictRequest, PredictResponse, FeedbackRequest
 from src.api.feedback_store import init_db, add_feedback, update_bad_streak
 from src.api.alerting import alert_if_needed
 
-
-import os
-from azure.monitor.opentelemetry import configure_azure_monitor
-from opentelemetry import trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-
-
-from pydantic import BaseModel
-
-if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
-    configure_azure_monitor()
-
-tracer = trace.get_tracer("tweet-sentiment")
+# Logging simple (stdout). Azure App Service récupère stdout/stderr -> Application Insights traces.
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger("tweet-sentiment")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # DB feedback + chargement modèle (en thread pour éviter de bloquer l'event loop)
     init_db()
     await asyncio.to_thread(load_assets)
     yield
 
 
-
 app = FastAPI(
     title="Tweet Sentiment API",
-    version="1.0.3",
+    version="1.0.4",
     lifespan=lifespan,
 )
-
-FastAPIInstrumentor.instrument_app(app)
 
 
 @app.get("/")
@@ -58,7 +49,7 @@ def predict(req: PredictRequest):
 
 @app.post("/feedback")
 def feedback(req: FeedbackRequest):
-    # 1) Persist
+    # 1) Persist feedback
     add_feedback(
         text=req.text,
         predicted_label=req.predicted_label,
@@ -67,18 +58,20 @@ def feedback(req: FeedbackRequest):
         true_label=req.true_label,
     )
 
-    # 2) Compteur erreurs consécutives
+    # 2) Update streak
     bad_streak = update_bad_streak(req.is_correct)
 
-    # 3) Traces (surtout quand c'est faux)
+    # 3) Emit log signal for Azure Monitor (rule: traces contains "BAD_PREDICTION")
     if not req.is_correct:
-        with tracer.start_as_current_span("prediction_not_validated") as span:
-            span.set_attribute("predicted_label", req.predicted_label)
-            if req.proba_negative is not None:
-                span.set_attribute("proba_negative", float(req.proba_negative))
-            span.set_attribute("is_correct", False)
+        logger.warning(
+            "BAD_PREDICTION bad_streak=%d predicted_label=%s proba_negative=%s true_label=%s",
+            bad_streak,
+            req.predicted_label,
+            req.proba_negative,
+            req.true_label,
+        )
 
-        # 4) Alerte si >= 5 (configurable)
+        # 4) Keep your optional hook (if it logs or does something else)
         alert_if_needed(
             bad_streak=bad_streak,
             predicted_label=req.predicted_label,
