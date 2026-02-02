@@ -28,6 +28,6 @@ jobs:
       - name: Deploy to Azure Web App (container)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: tweet-sentiment-api-g9cyfghcg6c9hne3
+          app-name: tweet-sentiment-api
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           images: aureliengruzon/tweet-sentiment-api:latest
