@@ -237,3 +237,11 @@ mlflow_archives/
 
 # Pyenv
 .python-version
+
+# allow MLflow model artifacts
+!models/best/data/
+!models/best/data/**
+
+
+!models/best/data/
+!models/best/data/**
