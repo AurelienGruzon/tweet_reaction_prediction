@@ -70,6 +70,14 @@ def main():
     val_df = pd.read_csv(VAL_PATH)
     test_df = pd.read_csv(TEST_PATH)
 
+    s_train = set(train_df["text"])
+    s_val   = set(val_df["text"])
+    s_test  = set(test_df["text"])
+
+    print("overlap train/val :", len(s_train & s_val))
+    print("overlap train/test:", len(s_train & s_test))
+    print("overlap val/test  :", len(s_val & s_test))
+
     X_train = train_df["text"].astype(str)
     y_train = train_df["target"].astype(int).to_numpy()
 

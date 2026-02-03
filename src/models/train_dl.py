@@ -24,6 +24,8 @@ from torch.nn.functional import softmax
 
 from src.models.impl.bert_torch import build_bert_model
 from src.models.impl.hf_dataset import HFDataset
+from src.models.impl.text_preprocess_nltk import preprocess_texts
+from src.models.impl.embeddings_gensim import build_embedding_matrix
 
 
 TRAIN_PATH = Path("data/processed/train.csv")
@@ -45,12 +47,20 @@ def set_seeds(seed: int):
     torch.cuda.manual_seed_all(seed)
 
 
-def build_model(model_name: str, vocab_size: int, embedding_dim: int, pad_id: int):
+def build_model(model_name: str, vocab_size: int, embedding_dim: int, pad_id: int, embedding_matrix=None, freeze_embeddings=False):
     if model_name == "simple":
         return SimpleMeanPool(vocab_size=vocab_size, embedding_dim=embedding_dim, pad_id=pad_id)
     if model_name == "lstm":
-        return BiLSTMClassifier(vocab_size=vocab_size, embedding_dim=embedding_dim, pad_id=pad_id, hidden_size=64)
+        return BiLSTMClassifier(
+            vocab_size=vocab_size,
+            embedding_dim=embedding_dim,
+            pad_id=pad_id,
+            hidden_size=64,
+            embedding_matrix=embedding_matrix,
+            freeze_embeddings=freeze_embeddings,
+        )
     raise ValueError(f"Unknown model: {model_name}")
+
 
 
 @torch.no_grad()
@@ -258,10 +268,31 @@ def main(args):
     
     if args.model == "bert":
         return train_bert(args, X_train_text, y_train, X_val_text, y_val, X_test_text, y_test)
+    
+
+    X_train_text = preprocess_texts(X_train_text, mode=args.preprocess)
+    X_val_text   = preprocess_texts(X_val_text, mode=args.preprocess)
+    X_test_text  = preprocess_texts(X_test_text, mode=args.preprocess)
+
 
 
     vocab = build_vocab(X_train_text, max_words=args.max_words, min_freq=2)
     max_len = infer_max_len_from_train(X_train_text, vocab, percentile=args.max_len_percentile)
+
+    embedding_matrix = None
+    if args.embed != "random":
+        embedding_matrix = build_embedding_matrix(
+            texts=X_train_text,     # IMPORTANT: train only
+            vocab=vocab,
+            method=args.embed,
+            dim=args.embedding_dim,
+            seed=SEED,
+            window=args.w2v_window,
+            min_count=args.w2v_min_count,
+            epochs=args.w2v_epochs,
+        )
+
+
 
     ds_train = TextDataset(X_train_text, y_train, vocab, max_len)
     ds_val = TextDataset(X_val_text, y_val, vocab, max_len)
@@ -271,19 +302,33 @@ def main(args):
     dl_val = DataLoader(ds_val, batch_size=args.batch_size * 2, shuffle=False, num_workers=0)
     dl_test = DataLoader(ds_test, batch_size=args.batch_size * 2, shuffle=False, num_workers=0)
 
-    model = build_model(args.model, vocab_size=len(vocab.itos), embedding_dim=args.embedding_dim, pad_id=vocab.pad_id)
+    model = build_model(
+        args.model,
+        vocab_size=len(vocab.itos),
+        embedding_dim=args.embedding_dim,
+        pad_id=vocab.pad_id,
+        embedding_matrix=embedding_matrix,
+        freeze_embeddings=bool(args.freeze_embeddings),
+    )
+
     model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    run_name = f"dl_{args.model}_emb{args.embedding_dim}_mw{args.max_words}_len{max_len}"
+    run_name = f"dl_{args.model}_pre{args.preprocess}_emb{args.embed}_dim{args.embedding_dim}_mw{args.max_words}_len{max_len}"
     mlflow.set_experiment(EXPERIMENT_NAME)
 
     with mlflow.start_run(run_name=run_name):
         mlflow.log_params({
             "framework": "pytorch",
             "model_name": args.model,
+            "preprocess": args.preprocess,
+            "embed": args.embed,
+            "freeze_embeddings": bool(args.freeze_embeddings),
+            "w2v_epochs": args.w2v_epochs,
+            "w2v_window": args.w2v_window,
+            "w2v_min_count": args.w2v_min_count,
             "max_words": args.max_words,
             "embedding_dim": args.embedding_dim,
             "max_len_percentile": args.max_len_percentile,
@@ -386,6 +431,13 @@ if __name__ == "__main__":
     p.add_argument("--bert-max-len", type=int, default=96)
     p.add_argument("--freeze-base", action="store_true")
     p.add_argument("--weight-decay", type=float, default=0.01)
+    p.add_argument("--preprocess", choices=["clean", "stem", "lemma"], default="clean")
+    p.add_argument("--embed", choices=["random", "word2vec", "fasttext"], default="random")
+    p.add_argument("--freeze-embeddings", action="store_true")
+    p.add_argument("--w2v-epochs", type=int, default=10)
+    p.add_argument("--w2v-window", type=int, default=5)
+    p.add_argument("--w2v-min-count", type=int, default=2)
+
 
     args = p.parse_args()
     main(args)

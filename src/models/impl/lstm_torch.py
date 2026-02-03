@@ -3,10 +3,23 @@ import torch.nn as nn
 
 
 class BiLSTMClassifier(nn.Module):
-    def __init__(self, vocab_size: int, embedding_dim: int, pad_id: int, hidden_size: int = 64):
+    def __init__(
+        self,
+        vocab_size: int,
+        embedding_dim: int,
+        pad_id: int,
+        hidden_size: int = 64,
+        embedding_matrix=None,
+        freeze_embeddings: bool = False,
+    ):
         super().__init__()
         self.pad_id = pad_id
-        self.emb = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_id)
+        if embedding_matrix is None:
+            self.emb = nn.Embedding(vocab_size, embedding_dim, padding_idx=pad_id)
+        else:
+            w = torch.tensor(embedding_matrix, dtype=torch.float32)
+            self.emb = nn.Embedding.from_pretrained(w, freeze=freeze_embeddings, padding_idx=pad_id)
+
         self.drop = nn.Dropout(0.2)
         self.lstm = nn.LSTM(
             input_size=embedding_dim,
