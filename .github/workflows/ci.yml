@@ -19,7 +19,7 @@ jobs:
         run: pip install poetry
 
       - name: Add pytest to dev dependencies
-        run: poetry add --group dev pytest
+        run: poetry add --group dev pytest httpx
 
       - name: Install deps
         run: poetry install --no-interaction --no-root --with dev
