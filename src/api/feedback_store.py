@@ -5,10 +5,13 @@ from typing import Optional
 
 DB_PATH = os.getenv("FEEDBACK_DB_PATH", "feedback.db")
 
+def _db_path() -> str:
+    return os.getenv("FEEDBACK_DB_PATH", "feedback.db")
+
 
 def _conn() -> sqlite3.Connection:
     # check_same_thread=False pour FastAPI multi-thread
-    return sqlite3.connect(DB_PATH, check_same_thread=False)
+    return sqlite3.connect(_db_path(), check_same_thread=False)
 
 
 def init_db() -> None:
