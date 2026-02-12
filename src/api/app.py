@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from azure.monitor.opentelemetry import configure_azure_monitor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
 
 from src.api.model_loader import predict_proba_negative, load_assets
 from src.api.schemas import PredictRequest, PredictResponse, FeedbackRequest
@@ -28,7 +30,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Tweet Sentiment API", version="1.0.5", lifespan=lifespan)
-
+FastAPIInstrumentor.instrument_app(app)
 
 @app.get("/health")
 def health():
