@@ -59,7 +59,7 @@ src/ : code source (API, modèle, utils)
 models/ : modèles sauvegardés  
 tests/ : tests unitaires  
 ui_streamlit/ : interface de test  
-docs/ : article et preuves  
+docs/ : article 
 .github/workflows : pipeline CI/CD  
 Dockerfile : conteneurisation  
 pyproject.toml : dépendances  
@@ -140,15 +140,6 @@ MLflow
 Streamlit  
 
 La liste complète est disponible dans pyproject.toml.
-
----
-
-## Contenu du dossier docs
-
-Article de blog détaillant la démarche  
-Captures MLflow  
-Captures CI/CD  
-Captures Azure Monitoring  
 
 ---
 
