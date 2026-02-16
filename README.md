@@ -68,11 +68,13 @@ pyproject.toml : dépendances
 
 ## API de prédiction
 
-Endpoint :
+## Endpoints de l’API
 
-POST /predict
+### POST /predict
 
-Exemple de requête :
+Prédit le sentiment d’un texte.
+
+Requête :
 
 {
   "text": "I hate this airline"
@@ -84,6 +86,40 @@ Réponse :
   "label": "negative",
   "proba_negative": 0.99
 }
+
+---
+
+### POST /feedback
+
+Permet d’envoyer un retour utilisateur sur la qualité de la prédiction.  
+Ce endpoint est utilisé pour le monitoring et le suivi de la performance du modèle.
+
+Requête :
+
+{
+  "text": "I hate this airline",
+  "predicted_label": "negative",
+  "is_correct": false
+}
+
+Effet :
+
+- enregistrement d’un événement de monitoring
+- incrémentation du compteur d’erreurs consécutives
+- envoi d’une trace à Azure Application Insights en cas d’erreur
+
+---
+
+### GET /health
+
+Endpoint de vérification de disponibilité de l’API.
+
+Réponse :
+
+{
+  "status": "ok"
+}
+
 
 ---
 
